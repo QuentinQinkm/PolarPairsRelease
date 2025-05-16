@@ -1,15 +1,15 @@
 Level 4
 7 11
-*XXXXX^
-.......
-..XXX..
-.&...$.
-X.....X
-$.XXX.&
-.......
-.X....X
-....BX.
-.SX....
 XXXXXXX
-10
-10
+XXXXXXX
+XXXXXXX
+X*.$.^X
+X.&.X$X
+X..!..X
+X&S..XX
+XB...XX
+XXXXXXX
+XXXXXXX
+XXXXXXX
+7
+7

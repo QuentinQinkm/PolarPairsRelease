@@ -1,15 +1,15 @@
-Tutorial Level
+Level 2
 7 11
-.......
-.......
-..XXX..
-.&...$.
-X.....X
-$.XXX.&
-.^..*..
-......X
-.....X.
-.S..B..
-.....!.
-10
-10
+XXXXXXX
+XXXXXXX
+XXXXXXX
+X^...*X
+X.XXX.X
+X.XXX.X
+X.XXX.X
+XB...SX
+XXXXXXX
+XXXXXXX
+XXXXXXX
+4
+4

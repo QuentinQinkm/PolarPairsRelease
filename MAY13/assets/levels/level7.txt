@@ -1,4 +1,4 @@
-Level 7
+Level 4
 7 11
 ..^X^..
 XX.X.XX
@@ -10,6 +10,6 @@ XXX$.X.
 .BXXX..
 .X.....
 .X..SX.
-XXXXXXX
+.......
 10
 10

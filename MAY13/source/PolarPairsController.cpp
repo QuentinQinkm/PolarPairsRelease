@@ -962,15 +962,19 @@ void PolarPairsController::calculateMovementTargets() {
         cugl::Vec2 rearPos = bearInFront ? _penguinGridPos : _polarBearGridPos;
         bool frontIsPenguin = !bearInFront;
         
-        // Calculate targets based on finish state
+        // Calculate front character target first
+        cugl::Vec2 frontTarget = frontPos;
         if (!(_bearFinished && bearInFront) && !(_penguinFinished && !bearInFront)) {
-            cugl::Vec2 frontTarget = computeTarget(frontPos, frontIsPenguin, false, _moveDirection, rearPos, NO_TARGET);
+            frontTarget = computeTarget(frontPos, frontIsPenguin, false, _moveDirection, rearPos, NO_TARGET);
             if (bearInFront) _polarBearTarget = frontTarget;
             else _penguinTarget = frontTarget;
         }
         
+        // Now calculate rear character target using the UPDATED front target position
+        cugl::Vec2 frontCharacterNewPos = frontTarget;
         if (!(_bearFinished && !bearInFront) && !(_penguinFinished && bearInFront)) {
-            cugl::Vec2 rearTarget = computeTarget(rearPos, !frontIsPenguin, false, _moveDirection, frontPos, _polarBearTarget);
+            cugl::Vec2 rearTarget = computeTarget(rearPos, !frontIsPenguin, false, _moveDirection, 
+                                                  frontCharacterNewPos, frontTarget);
             if (bearInFront) _penguinTarget = rearTarget;
             else _polarBearTarget = rearTarget;
         }
@@ -1167,8 +1171,30 @@ cugl::Vec2 PolarPairsController::computeTarget(const cugl::Vec2& start, bool isP
         // Check boundary
         if (next.x < 0 || next.x >= GRID_WIDTH || next.y < 0 || next.y >= GRID_HEIGHT) break;
         
-        // Check for other character
+        // Check for other character's current or future position
         if (next == otherTarget || (otherTarget == NO_TARGET && next == otherStart)) break;
+        
+        // Check if characters are aligned on movement axis and would pass through each other
+        bool wouldPassThroughOther = false;
+        if (direction.x != 0) { // Horizontal movement
+            if (next.y == otherStart.y) { // Same row
+                // Check if we'd pass through the other character
+                if ((direction.x > 0 && curr.x < otherStart.x && next.x > otherStart.x) || 
+                    (direction.x < 0 && curr.x > otherStart.x && next.x < otherStart.x)) {
+                    wouldPassThroughOther = true;
+                }
+            }
+        } else if (direction.y != 0) { // Vertical movement
+            if (next.x == otherStart.x) { // Same column
+                // Check if we'd pass through the other character
+                if ((direction.y > 0 && curr.y < otherStart.y && next.y > otherStart.y) || 
+                    (direction.y < 0 && curr.y > otherStart.y && next.y < otherStart.y)) {
+                    wouldPassThroughOther = true;
+                }
+            }
+        }
+        
+        if (wouldPassThroughOther) break;
         
         // Check cell type
         int cell = _grid[next.x][next.y];

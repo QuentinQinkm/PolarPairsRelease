@@ -1332,6 +1332,8 @@ void HelloApp::buildFinishScene() {
                     playButtonSound(_assets);
                 } else {  // On release
                     _finishRestartButton->deactivate();
+                    // Set flag to restart the level directly (use the same path as "next" button)
+                    _goToNextLevel = true;
                     // Transition back to the same level
                     transitionToGame(_selectedLevel);
                 }

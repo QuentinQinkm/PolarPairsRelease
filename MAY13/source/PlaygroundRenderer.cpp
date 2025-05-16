@@ -37,6 +37,27 @@ void PlaygroundRenderer::init(const std::shared_ptr<cugl::scene2::Scene2>& scene
 }
 
 void PlaygroundRenderer::clear() {
+    // First, find and remove all flag nodes directly from the scene
+    std::vector<std::shared_ptr<cugl::scene2::SceneNode>> flagsToRemove;
+    
+    // Search for all children in the scene that might be flag nodes
+    for (int i = 0; i < _scene->getChildCount(); i++) {
+        auto child = _scene->getChild(i);
+        
+        // Check if this looks like a flag (based on name, priority, or position)
+        if (child && (child->getName().find("Flag") != std::string::npos || 
+                    (child->getPriority() > 30 && child->getPriority() < 100))) {
+            
+            // This is likely a flag node, add it to removal list
+            flagsToRemove.push_back(child);
+        }
+    }
+    
+    // Remove all identified flag nodes
+    for (auto& flag : flagsToRemove) {
+        _scene->removeChild(flag);
+    }
+    
     // Remove block nodes
     for (auto it = _blockNodes.begin(); it != _blockNodes.end(); ) {
         if (!isUIElement(*it)) {  // Only remove non-UI elements
@@ -71,7 +92,20 @@ void PlaygroundRenderer::clear() {
     }
     _breakingAnimations.clear();
     
-    // Clear all finish animations
+    // Properly clean up finish block animations
+    for (auto& anim : _finishBlockAnimations) {
+        // Remove flag if it exists
+        if (anim.flag && anim.flag->getParent()) {
+            _scene->removeChild(anim.flag);
+            anim.flag = nullptr;
+        }
+        
+        // Reset block scale if it exists
+        if (anim.block) {
+            float originalScale = 1.13f * _tileSize / std::max(anim.block->getTexture()->getWidth(), anim.block->getTexture()->getHeight());
+            anim.block->setScale(originalScale);
+        }
+    }
     _finishBlockAnimations.clear();
 }
 
@@ -496,6 +530,10 @@ void PlaygroundRenderer::update(float dt) {
                         it->flag->setPriority(it->block->getPriority() + 1);  // Higher than finish block
                         it->flag->setColor(cugl::Color4(255, 255, 255, 0));  // Start with 0 opacity
                         _scene->addChild(it->flag);
+                        
+                        // Name the flag for better tracking
+                        std::string flagName = (it->isBear ? "BearFlag_" : "SealFlag_") + std::to_string(it->x) + "_" + std::to_string(it->y);
+                        it->flag->setName(flagName);
                     }
                 }
                 
