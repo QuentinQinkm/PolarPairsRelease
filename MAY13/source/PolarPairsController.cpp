@@ -831,9 +831,28 @@ void PolarPairsController::checkWinCondition() {
             score += 1;
         }
         
+        // Check if both characters reached their finish blocks on the same move
+        // We need to check if their target positions both are finish blocks
+        bool bearTargetIsFinish = false;
+        for (const auto& pos : _bearFinishBlocks) {
+            if (pos.x == _polarBearTarget.x && pos.y == _polarBearTarget.y) {
+                bearTargetIsFinish = true;
+                break;
+            }
+        }
+        
+        bool penguinTargetIsFinish = false;
+        for (const auto& pos : _penguinFinishBlocks) {
+            if (pos.x == _penguinTarget.x && pos.y == _penguinTarget.y) {
+                penguinTargetIsFinish = true;
+                break;
+            }
+        }
+        
         // Score +1 if both characters finish on the same move
-        if (_bearMoves == _penguinMoves) {
+        if (bearTargetIsFinish && penguinTargetIsFinish) {
             score += 1;
+            CULog("Both characters finished on same move! +1 point");
         }
         
         // Ensure score is between 0 and 3
