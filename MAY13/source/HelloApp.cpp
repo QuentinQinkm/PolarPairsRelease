@@ -930,6 +930,17 @@ void HelloApp::buildMenuScene() {
     // Calculate tile size using our helper method
     float tileSize = calculateTileSize();
     
+    // Add logo at the top center
+    if (auto logoTexture = _assets->get<Texture>("logo")) {
+        auto topLogo = PolygonNode::allocWithTexture(logoTexture);
+        float logoScale = (tileSize * 1.2f) / logoTexture->getHeight();
+        topLogo->setScale(logoScale);
+        topLogo->setAnchor(Vec2::ANCHOR_CENTER);
+        topLogo->setPosition(displaySize.width *0.2f, displaySize.height * 0.1f);
+        topLogo->setPriority(200); // Set priority to be above characters
+        _menuScene->addChild(topLogo);
+    }
+    
     // Create characters using tileSize as reference
     // SealTitleIMG and BearTitleIMG should be 7x of tileSize height
     float bearScale = (tileSize * 7.0f) / _assets->get<Texture>("BearTitleIMG")->getHeight();
@@ -968,7 +979,7 @@ void HelloApp::buildMenuScene() {
         float scale = (tileSize * 0.7f) / promptTexture->getHeight();
         _startButton->setScale(scale);
         _startButton->setAnchor(Vec2::ANCHOR_CENTER);
-        _startButton->setPosition(displaySize.width / 2.0f, bottomSafeArea + effectiveHeight * 0.28f);
+        _startButton->setPosition(displaySize.width / 2.0f, bottomSafeArea + effectiveHeight * 0.32f);
         _startButton->setPriority(300); // Set priority to be above everything
         _startButton->setColor(Color4(255, 255, 255, 128));
         _menuScene->addChild(_startButton);
