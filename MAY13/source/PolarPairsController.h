@@ -68,6 +68,7 @@ private:
     int _penguinMoves;
     bool _bearFinished;
     bool _penguinFinished;
+    bool _simultaneousDestinationReached;
     
     // Constant speed movement variables
     float _bearTravelDistance;
@@ -252,7 +253,7 @@ public:
     PolarPairsController() : _isMoving(false), _moveProgress(0.0f), _hasWon(false),
                            _currentLevel(1), _touchActive(false), _shouldExitToMenu(false),
                            _bearMoves(0), _penguinMoves(0), _bearFinished(false), _penguinFinished(false),
-                           _bearTravelDistance(0), _penguinTravelDistance(0), _totalTravelDistance(0),
+                           _simultaneousDestinationReached(false), _bearTravelDistance(0), _penguinTravelDistance(0), _totalTravelDistance(0),
                            _touchingPauseButton(false), _restartButtonPressed(false), _pauseButtonPressed(false),
                            _restartButtonOrigColor(cugl::Color4::WHITE), _pauseButtonOrigColor(cugl::Color4::WHITE),
                            _isPaused(false), _exitButton(nullptr), _resumeButton(nullptr), _pauseOverlay(nullptr),

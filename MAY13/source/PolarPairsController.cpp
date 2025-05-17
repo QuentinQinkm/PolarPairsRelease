@@ -511,6 +511,18 @@ void PolarPairsController::updateMovement(float timestep) {
         bool bearMoved = _polarBearGridPos != _polarBearPrevPos;
         bool penguinMoved = _penguinGridPos != _penguinPrevPos;
         
+        // Check if both characters reached their destinations at the same time
+        if (bearMoved && penguinMoved) {
+            float bearDistance = (_polarBearTarget - _polarBearPrevPos).length();
+            float penguinDistance = (_penguinTarget - _penguinPrevPos).length();
+            
+            // Both characters moved a significant distance in the same move
+            if (bearDistance > 0.01f && penguinDistance > 0.01f) {
+                _simultaneousDestinationReached = true;
+                CULog("Both characters moved to destinations simultaneously!");
+            }
+        }
+        
         // Increment move counters if characters actually moved
         if (bearMoved) _bearMoves++;
         if (penguinMoved) _penguinMoves++;
@@ -831,28 +843,11 @@ void PolarPairsController::checkWinCondition() {
             score += 1;
         }
         
-        // Check if both characters reached their finish blocks on the same move
-        // We need to check if their target positions both are finish blocks
-        bool bearTargetIsFinish = false;
-        for (const auto& pos : _bearFinishBlocks) {
-            if (pos.x == _polarBearTarget.x && pos.y == _polarBearTarget.y) {
-                bearTargetIsFinish = true;
-                break;
-            }
-        }
-        
-        bool penguinTargetIsFinish = false;
-        for (const auto& pos : _penguinFinishBlocks) {
-            if (pos.x == _penguinTarget.x && pos.y == _penguinTarget.y) {
-                penguinTargetIsFinish = true;
-                break;
-            }
-        }
-        
-        // Score +1 if both characters finish on the same move
-        if (bearTargetIsFinish && penguinTargetIsFinish) {
+        // Add third point if both characters reached destination at the same time
+        // This is now handled during movement in updateMovement()
+        if (_simultaneousDestinationReached) {
             score += 1;
-            CULog("Both characters finished on same move! +1 point");
+            CULog("Both characters reached destinations simultaneously! +1 point");
         }
         
         // Ensure score is between 0 and 3
@@ -1323,6 +1318,7 @@ void PolarPairsController::createMoveCounters() {
     _penguinMoves = 0;
     _bearFinished = false;
     _penguinFinished = false;
+    _simultaneousDestinationReached = false;
 }
 
 void PolarPairsController::updateMoveCounters() {
