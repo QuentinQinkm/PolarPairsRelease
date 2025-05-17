@@ -874,6 +874,11 @@ void PolarPairsController::moveCharacters(const cugl::Vec2& direction) {
         // Calculate targets first to determine if a squeeze will occur
         calculateMovementTargets();
         
+        // If a squeeze occurred, trigger bounce animation for the character being pushed (moving opposite to input direction)
+        if (_squeezeJustOccurred) {
+            _renderer.startCharacterBounceAnimation(_bearIsBeingPushed);
+        }
+        
         // Check if movement was blocked (targets equal current positions)
         if (_polarBearTarget == _polarBearGridPos && _penguinTarget == _penguinGridPos) {
             // Play the blocked sound
@@ -881,6 +886,9 @@ void PolarPairsController::moveCharacters(const cugl::Vec2& direction) {
             if (blockedSound) {
                 cugl::audio::AudioEngine::get()->play("blocked", blockedSound, false, 0.8f);
             }
+            
+            // Trigger the blocked animation
+            _renderer.startBlockedAnimation(_moveDirection);
         } else if (!_squeezeJustOccurred) {
             // Play move sound ONLY if not a squeeze (squeeze sound is played in calculateMovementTargets)
             auto moveSound = _assets->get<cugl::audio::Sound>("moveSound");
@@ -921,6 +929,9 @@ void PolarPairsController::calculateMovementTargets() {
         
         // Squeeze mechanics: rear character pushes front character in opposite direction
         bool bearFront = !_polarBearIsRear;
+        
+        // The bear is the one moving in the opposite direction if it's the front character
+        _bearIsBeingPushed = bearFront;
         
         // Calculate movements for front and rear characters
         cugl::Vec2 frontStart = bearFront ? _polarBearGridPos : _penguinGridPos;

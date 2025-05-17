@@ -164,6 +164,18 @@ private:
     /** Original position of next button */
     cugl::Vec2 _nextButtonOrigPos;
     
+    /** Level title texture node */
+    std::shared_ptr<cugl::scene2::PolygonNode> _levelTitle;
+    
+    /** Whether level title is being pressed for reset feature */
+    bool _levelTitleTouched;
+    
+    /** Time when level title touch started */
+    float _levelTitleTouchTime;
+    
+    /** Starting position of level title touch */
+    cugl::Vec2 _levelTitleTouchPos;
+    
     /** Build the menu scene */
     void buildMenuScene();
     
@@ -209,7 +221,8 @@ public:
     HelloApp() : _inMenuScene(true), _inLevelScene(false), _inFinishScene(false), _isTransitioning(false), 
                  _isFadingOut(false), _buttonPressed(false), _animTime(0), _transitionTime(0),
                  _sealBaseY(0), _bearBaseY(0), _levelSealBaseY(0), _levelBearBaseY(0), _backgroundBaseX(0), _backgroundBaseY(0),
-                 _goToNextLevel(false), _isFinishSceneAnimating(false), _finishAnimTime(0) {}
+                 _goToNextLevel(false), _isFinishSceneAnimating(false), _finishAnimTime(0),
+                 _levelTitleTouched(false), _levelTitleTouchTime(0) {}
     
     /** Destructor */
     ~HelloApp() { dispose(); }

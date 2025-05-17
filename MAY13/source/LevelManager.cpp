@@ -188,4 +188,22 @@ void LevelManager::unlockLevel(int levelNumber) {
         _levels[levelNumber - 1].isUnlocked = true;
         saveLevelData();
     }
+}
+
+void LevelManager::resetAllProgress() {
+    // Reset all level data
+    _levels.clear();
+    
+    // First level is always unlocked
+    _levels.push_back({1, true, 0});
+    
+    // Add other levels (locked by default)
+    for (int i = 2; i <= 12; i++) {  // 12 levels total
+        _levels.push_back({i, false, 0});
+    }
+    
+    // Save the reset state
+    saveLevelData();
+    
+    CULog("All level progress has been reset");
 } 

@@ -109,6 +109,9 @@ private:
     bool _polarBearIsRear;
     bool checkForSqueeze();
     
+    // Track which character is being pushed during squeeze (bear = true, penguin = false)
+    bool _bearIsBeingPushed;
+    
     // Movement and collision
     cugl::Vec2 calculateSingleCharacterMove(const cugl::Vec2& start, bool isPenguin, const cugl::Vec2& direction);
     cugl::Vec2 computeTarget(const cugl::Vec2& start, bool isPenguin, bool canBreak,
@@ -260,7 +263,7 @@ public:
                            _isShowingInstructions(false), _questionButton(nullptr), _returnButton(nullptr), 
                            _instructionOverlay(nullptr), _instructionImage(nullptr),
                            _isFading(false), _fadeTime(0), _fadeDuration(0), _isFadingIn(true),
-                           _winDelay(0.0f), _winConditionMet(false) {}
+                           _winDelay(0.0f), _winConditionMet(false), _bearIsBeingPushed(false) {}
     ~PolarPairsController() { dispose(); }
     
     // Core methods

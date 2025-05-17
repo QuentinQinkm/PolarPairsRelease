@@ -478,6 +478,77 @@ void PlaygroundRenderer::update(float dt) {
         }
     }
     
+    // Update blocked animations
+    for (auto it = _blockedAnimations.begin(); it != _blockedAnimations.end(); ) {
+        it->progress += dt / 0.15f;  // 0.15 second animation
+        
+        if (it->progress >= 1.0f) {
+            // Animation complete, reset characters to original positions
+            if (it->bearCharacter) {
+                it->bearCharacter->setPosition(it->bearOriginalPos);
+            }
+            if (it->penguinCharacter) {
+                it->penguinCharacter->setPosition(it->penguinOriginalPos);
+            }
+            
+            it = _blockedAnimations.erase(it);
+        } else {
+            float offset = 0.0f;
+            
+            if (it->progress < 0.5f) {
+                // Moving forward phase (0 to 0.5)
+                offset = 0.2f * it->tileSize * (it->progress / 0.5f);
+            } else {
+                // Moving back phase (0.5 to 1.0)
+                offset = 0.2f * it->tileSize * (1.0f - ((it->progress - 0.5f) / 0.5f));
+            }
+            
+            // Calculate the position offset based on direction
+            cugl::Vec2 posOffset = it->direction * offset;
+            
+            // Apply offset to character positions
+            if (it->bearCharacter) {
+                it->bearCharacter->setPosition(it->bearOriginalPos + posOffset);
+            }
+            if (it->penguinCharacter) {
+                it->penguinCharacter->setPosition(it->penguinOriginalPos + posOffset);
+            }
+            
+            ++it;
+        }
+    }
+    
+    // Update character bounce animations
+    for (auto it = _characterBounceAnimations.begin(); it != _characterBounceAnimations.end(); ) {
+        it->progress += dt / 0.15f;  // 0.15 second animation (twice as fast as original)
+        
+        if (it->progress >= 1.0f) {
+            // Animation complete, reset character to normal scale
+            if (it->character) {
+                it->character->setScale(it->originalScale);
+            }
+            
+            it = _characterBounceAnimations.erase(it);
+        } else {
+            // Calculate current animation state
+            float scale = 1.0f;
+            if (it->progress < 0.5f) {
+                // Expanding phase (0 to 0.5)
+                scale = 1.0f + 0.35f * (it->progress / 0.5f);  // 35% expansion
+            } else {
+                // Contracting phase (0.5 to 1.0)
+                scale = 1.35f - 0.35f * ((it->progress - 0.5f) / 0.5f);
+            }
+            
+            // Apply scale to character
+            if (it->character) {
+                it->character->setScale(it->originalScale * scale);
+            }
+            
+            ++it;
+        }
+    }
+    
     // Update finish block animations
     for (auto it = _finishBlockAnimations.begin(); it != _finishBlockAnimations.end(); ) {
         it->progress += dt / 0.4f;  // 0.4 second animation
@@ -548,6 +619,47 @@ void PlaygroundRenderer::update(float dt) {
             ++it;
         }
     }
+}
+
+void PlaygroundRenderer::startCharacterBounceAnimation(bool isBear) {
+    // Get the appropriate character node
+    std::shared_ptr<cugl::scene2::SceneNode> character = isBear ? _polarBear : _penguin;
+    
+    if (!character) {
+        return; // Character doesn't exist
+    }
+    
+    // Check if this character is already animating
+    bool alreadyAnimating = false;
+    for (const auto& anim : _characterBounceAnimations) {
+        if (anim.isBear == isBear) {
+            alreadyAnimating = true;
+            break;
+        }
+    }
+    
+    if (!alreadyAnimating) {
+        // Get original scale
+        float originalScale = character->getScale().x;
+        
+        // Create and add the animation
+        _characterBounceAnimations.emplace_back(isBear, character, originalScale);
+    }
+}
+
+void PlaygroundRenderer::startBlockedAnimation(const cugl::Vec2& direction) {
+    // Check if either character doesn't exist
+    if (!_polarBear || !_penguin) {
+        return;
+    }
+    
+    // Check if there's already an active blocked animation
+    if (!_blockedAnimations.empty()) {
+        return;
+    }
+    
+    // Create and add the animation
+    _blockedAnimations.emplace_back(direction, _tileSize, _polarBear, _penguin);
 }
 
 void PlaygroundRenderer::startFinishBlockAnimation(int x, int y, bool isBear) {

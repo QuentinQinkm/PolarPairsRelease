@@ -50,4 +50,7 @@ public:
     
     // Get total number of levels
     int getTotalLevels() const { return _levels.size(); }
+    
+    // Reset all level progress (only keep level 1 unlocked)
+    void resetAllProgress();
 }; 

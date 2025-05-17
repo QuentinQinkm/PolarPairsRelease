@@ -57,11 +57,47 @@ private:
             : x(gridX), y(gridY), isBear(bear), progress(0), block(b), flag(nullptr) {}
     };
     
+    // Structure to track character bounce animations
+    struct CharacterBounceAnimation {
+        bool isBear;
+        float progress;  // 0 to 1
+        float originalScale;
+        std::shared_ptr<cugl::scene2::SceneNode> character;
+        
+        CharacterBounceAnimation(bool bear, std::shared_ptr<cugl::scene2::SceneNode> c, float scale)
+            : isBear(bear), progress(0), originalScale(scale), character(c) {}
+    };
+    
+    // Structure to track blocked movement animations
+    struct BlockedAnimation {
+        float progress;  // 0 to 1
+        cugl::Vec2 direction;  // Direction of the blocked movement
+        float tileSize;  // Tile size for distance calculation
+        std::shared_ptr<cugl::scene2::SceneNode> bearCharacter;
+        std::shared_ptr<cugl::scene2::SceneNode> penguinCharacter;
+        cugl::Vec2 bearOriginalPos;
+        cugl::Vec2 penguinOriginalPos;
+        
+        BlockedAnimation(cugl::Vec2 dir, float size,
+                         std::shared_ptr<cugl::scene2::SceneNode> bear, 
+                         std::shared_ptr<cugl::scene2::SceneNode> penguin)
+            : progress(0), direction(dir), tileSize(size),
+              bearCharacter(bear), penguinCharacter(penguin),
+              bearOriginalPos(bear ? bear->getPosition() : cugl::Vec2::ZERO),
+              penguinOriginalPos(penguin ? penguin->getPosition() : cugl::Vec2::ZERO) {}
+    };
+    
     // List of active finish block animations
     std::vector<FinishBlockAnimation> _finishBlockAnimations;
     
     // List of active breaking block animations
     std::vector<BreakingBlockAnimation> _breakingAnimations;
+    
+    // List of active character bounce animations
+    std::vector<CharacterBounceAnimation> _characterBounceAnimations;
+    
+    // List of active blocked animations
+    std::vector<BlockedAnimation> _blockedAnimations;
     
     // Helper method to add a node for a single cell
     std::shared_ptr<cugl::scene2::PolygonNode> addCellNode(int x, int y, int cellType);
@@ -117,6 +153,16 @@ public:
      * Start a finish block animation at the specified grid position
      */
     void startFinishBlockAnimation(int x, int y, bool isBear);
+    
+    /**
+     * Start a bounce animation for a character (bear or seal)
+     */
+    void startCharacterBounceAnimation(bool isBear);
+    
+    /**
+     * Start a blocked animation for both characters
+     */
+    void startBlockedAnimation(const cugl::Vec2& direction);
     
     /**
      * Update finish block animations

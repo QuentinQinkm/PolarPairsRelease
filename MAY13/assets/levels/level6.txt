@@ -1,15 +1,15 @@
-Level 3 Breakable Blocks Tutorial
+Level 6
 7 11
-^.....*
-!XXXXX!
+XXXXXXX
+XXXXXXX
+X...^$X
+X..*&..
+X...!X!
+X&.!...
 .......
-..XXX..
-.......
-X.....X
-XX!!!XX
-.......
-.....!.
-X!...BX
-.&..SBX
-10
-10
+.X.....
+SB....X
+XXXXXXX
+XXXXXXX
+9
+9

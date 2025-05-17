@@ -265,6 +265,67 @@ void HelloApp::update(float timestep) {
         // Process button interactions through scene update
         _levelScene->update(timestep);
         
+        // Handle touch input for level title reset feature
+        if (_levelTitle) {
+            bool isTouching = false;
+            Vec2 inputPos;
+            
+            // Check for touch input
+            auto touch = Input::get<Touchscreen>();
+            if (touch && touch->touchCount() > 0) {
+                auto& touchSet = touch->touchSet();
+                if (!touchSet.empty()) {
+                    TouchID tid = *(touchSet.begin());
+                    inputPos = touch->touchPosition(tid);
+                    isTouching = touch->touchDown(tid);
+                }
+            }
+            
+            if (isTouching) {
+                Vec2 scenePos = _levelScene->screenToWorldCoords(inputPos);
+                
+                // Check if touch is on level title
+                cugl::Rect titleBounds = _levelTitle->getBoundingBox();
+                
+                // Touch began on level title
+                if (titleBounds.contains(scenePos) && !_levelTitleTouched) {
+                    _levelTitleTouched = true;
+                    _levelTitleTouchTime = _animTime; // Store current time
+                    _levelTitleTouchPos = scenePos;
+                    CULog("Level title touch started");
+                }
+                // Touch continuing on level title
+                else if (_levelTitleTouched) {
+                    // Check if finger didn't move too much (30 pixels max drift)
+                    float drift = (scenePos - _levelTitleTouchPos).length();
+                    if (drift > 30.0f) {
+                        // Cancel the reset if drifted too far
+                        _levelTitleTouched = false;
+                        CULog("Level title touch canceled (moved too far)");
+                    } 
+                    else {
+                        // Check if we've been touching for 3 seconds
+                        float touchDuration = _animTime - _levelTitleTouchTime;
+                        if (touchDuration >= 3.0f) {
+                            // Reset all level progress
+                            LevelManager::getInstance()->resetAllProgress();
+                            CULog("All level progress reset!");
+                            
+                            // Reset touch state
+                            _levelTitleTouched = false;
+                            
+                            // Rebuild level scene to reflect changes
+                            buildLevelScene();
+                        }
+                    }
+                }
+            } 
+            else if (_levelTitleTouched) {
+                // Touch ended or cancelled
+                _levelTitleTouched = false;
+            }
+        }
+        
         // Debug touch input for level buttons
         auto touch = Input::get<Touchscreen>();
         if (touch && touch->touchCount() > 0) {
@@ -377,8 +438,8 @@ void HelloApp::update(float timestep) {
                 _finishRestartButton->setPosition(_restartButtonOrigPos.x, currentY);
             }
             
-            // Animate next button (no delay)
-            if (_finishNextButton) {
+            // Only show and animate the next button for levels 1-11, completely skip for level 12
+            if (_finishNextButton && _selectedLevel < 12) {
                 float startY = -getDisplaySize().height * 0.1f;
                 float targetY = _nextButtonOrigPos.y;
                 float currentY = startY + (targetY - startY) * easedProgress;
@@ -394,7 +455,11 @@ void HelloApp::update(float timestep) {
                 if (_finishStarRating) _finishStarRating->setPosition(_starRatingOrigPos);
                 if (_highestText) _highestText->setPosition(_highestTextOrigPos);
                 if (_finishRestartButton) _finishRestartButton->setPosition(_restartButtonOrigPos);
-                if (_finishNextButton) _finishNextButton->setPosition(_nextButtonOrigPos);
+                
+                // Only position the next button for levels 1-11
+                if (_finishNextButton && _selectedLevel < 12) {
+                    _finishNextButton->setPosition(_nextButtonOrigPos);
+                }
             }
         }
         
@@ -565,12 +630,31 @@ void HelloApp::updateTransition(float timestep) {
                     if (_gameBackground && _gameBackground->getParent()) {
                         _gameBackground->getParent()->removeChild(_gameBackground);
                     }
+                    
+                    // Store the level we just completed
+                    _selectedLevel = _PolarPairsController->getCurrentLevel();
+                    
+                    // Clean up controller
                     _PolarPairsController = nullptr;
+                    
+                    // Update finish scene for the completed level - don't rebuild
+                    // Instead, just handle the next button visibility
+                    if (_finishNextButton) {
+                        if (_selectedLevel >= 12) {
+                            // Hide the next button for level 12
+                            _finishNextButton->setVisible(false);
+                            _finishNextButton->deactivate(); // Disable interaction
+                        } else {
+                            // For other levels, ensure the button is visible
+                            _finishNextButton->setVisible(true);
+                            _finishNextButton->activate();
+                        }
+                    }
                     
                     // Reset finish scene UI opacity
                     if (_finishScene) {
                         for (auto& child : _finishScene->getChildren()) {
-                            if (child != _finishBackground) {
+                            if (child != _finishBackground && child != _finishNextButton) {
                                 child->setColor(Color4(255, 255, 255, 0));
                             }
                         }
@@ -1010,6 +1094,11 @@ void HelloApp::buildLevelScene() {
         levelTitle->setPosition(displaySize.width * 0.5f, displaySize.height * 0.75f);
         levelTitle->setPriority(200);  // Set priority to be above characters
         _levelScene->addChild(levelTitle);
+        
+        // Store the level title for reset feature
+        _levelTitle = levelTitle;
+        _levelTitleTouched = false;
+        _levelTitleTouchTime = 0;
     }
     
     // Create combined character image for level scene
@@ -1197,7 +1286,7 @@ void HelloApp::transitionToGame(int level) {
  */
 void HelloApp::buildFinishScene() {
     // Add the finish scene background that was created in createSharedBackground
-    if (_finishBackground) {
+    if (_finishBackground && !_finishBackground->getParent()) {
         _finishScene->addChild(_finishBackground);
     }
     
@@ -1222,7 +1311,9 @@ void HelloApp::buildFinishScene() {
             // Store original position
             _levelFinishedOrigPos = _levelFinishedText->getPosition();
             
-            _finishScene->addChild(_levelFinishedText);
+            if (!_levelFinishedText->getParent()) {
+                _finishScene->addChild(_levelFinishedText);
+            }
         }
     }
     
@@ -1244,7 +1335,9 @@ void HelloApp::buildFinishScene() {
             // Store original position
             _starRatingOrigPos = _finishStarRating->getPosition();
             
-            _finishScene->addChild(_finishStarRating);
+            if (!_finishStarRating->getParent()) {
+                _finishScene->addChild(_finishStarRating);
+            }
         }
     }
     
@@ -1266,7 +1359,9 @@ void HelloApp::buildFinishScene() {
             // Store original position
             _highestTextOrigPos = _highestText->getPosition();
             
-            _finishScene->addChild(_highestText);
+            if (!_highestText->getParent()) {
+                _finishScene->addChild(_highestText);
+            }
         }
     }
     
@@ -1301,7 +1396,9 @@ void HelloApp::buildFinishScene() {
                 }
             });
             
-            _finishScene->addChild(_finishExitButton);
+            if (!_finishExitButton->getParent()) {
+                _finishScene->addChild(_finishExitButton);
+            }
         }
     }
     
@@ -1339,12 +1436,14 @@ void HelloApp::buildFinishScene() {
                 }
             });
             
-            _finishScene->addChild(_finishRestartButton);
+            if (!_finishRestartButton->getParent()) {
+                _finishScene->addChild(_finishRestartButton);
+            }
         }
     }
     
     // Create next level button (only for levels 1-11)
-    if (!_finishNextButton && _selectedLevel < 12) {
+    if (!_finishNextButton) {
         std::shared_ptr<Texture> nextUp = _assets->get<Texture>("Next_Up");
         std::shared_ptr<Texture> nextDown = _assets->get<Texture>("Next_Down");
         
@@ -1386,14 +1485,22 @@ void HelloApp::buildFinishScene() {
                 }
             });
             
-            _finishScene->addChild(_finishNextButton);
+            if (!_finishNextButton->getParent()) {
+                _finishScene->addChild(_finishNextButton);
+            }
         }
-    } else if (_finishNextButton && _selectedLevel >= 12) {
-        // Remove the next button for level 12 (final level)
-        if (_finishNextButton->getParent()) {
-            _finishNextButton->getParent()->removeChild(_finishNextButton);
+    }
+    
+    // Set visibility of next button based on level
+    if (_finishNextButton) {
+        if (_selectedLevel >= 12) {
+            // Hide for level 12 (final level)
+            _finishNextButton->setVisible(false);
+            _finishNextButton->deactivate();
+        } else {
+            // Show for other levels
+            _finishNextButton->setVisible(true);
         }
-        _finishNextButton = nullptr;
     }
 }
 
@@ -1434,40 +1541,42 @@ void HelloApp::transitionToFinishScene() {
     // Update the star rating with the current level score
     updateFinishSceneStars();
     
-    // Activate the finish exit button
+    // Set up elements for animation
     if (_finishExitButton) {
         _finishExitButton->activate();
     }
     
-    // Activate the restart button and position it below the screen for animation
+    // Position elements off-screen for animation entrance
+    float offscreenY = -getDisplaySize().height * 0.1f;
+    
+    // Restart button
     if (_finishRestartButton) {
-        float offscreenY = -getDisplaySize().height * 0.1f; // Position below the screen
         _finishRestartButton->setPosition(_restartButtonOrigPos.x, offscreenY);
         _finishRestartButton->activate();
     }
     
-    // Activate the finish next button and position it below the screen for animation
-    if (_finishNextButton && _selectedLevel < 12) {
-        float offscreenY = -getDisplaySize().height * 0.1f; // Position below the screen
-        _finishNextButton->setPosition(_nextButtonOrigPos.x, offscreenY);
-        _finishNextButton->activate();
+    // Next button - only for non-final levels
+    if (_finishNextButton) {
+        if (_selectedLevel < 12) {
+            _finishNextButton->setVisible(true);
+            _finishNextButton->setPosition(_nextButtonOrigPos.x, offscreenY);
+            _finishNextButton->activate();
+        } else {
+            _finishNextButton->setVisible(false);
+            _finishNextButton->deactivate();
+        }
     }
     
-    // Position Level Finished text below the screen for animation
+    // Position other elements off-screen for animation
     if (_levelFinishedText) {
-        float offscreenY = -getDisplaySize().height * 0.1f; // Position below the screen
         _levelFinishedText->setPosition(_levelFinishedOrigPos.x, offscreenY);
     }
     
-    // Position star rating below the screen for animation
     if (_finishStarRating) {
-        float offscreenY = -getDisplaySize().height * 0.1f; // Position below the screen
         _finishStarRating->setPosition(_starRatingOrigPos.x, offscreenY);
     }
     
-    // Position highest text below the screen for animation
     if (_highestText) {
-        float offscreenY = -getDisplaySize().height * 0.1f; // Position below the screen
         _highestText->setPosition(_highestTextOrigPos.x, offscreenY);
     }
     
